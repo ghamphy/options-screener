@@ -85,8 +85,8 @@ class PutScreener(OptionsScreener):
             return close, "close_fallback", {'close': close, 'session': trading_session}
         
         return None, "no_data", {'session': trading_session}
-
-    def screen_puts(self, ticker: str, target_dte: int, min_pitm: float = 0.10, max_pitm: float = 0.20, use_optimized: bool = True):
+    
+    def screen_puts(self, ticker: str, target_dte: int, max_pitm: float = 0.20, use_optimized: bool = True):
         """
         Screen put options for cash-secured put strategies
         
@@ -110,15 +110,15 @@ class PutScreener(OptionsScreener):
             logger.info(f"Current {ticker} price: ${stock_price:.2f}")
             
             if use_optimized:
-                return self._screen_puts_optimized(ticker, target_dte, min_pitm, max_pitm, stock_price)
+                return self._screen_puts_optimized(ticker, target_dte, max_pitm, stock_price)
             else:
-                return self._screen_puts_standard(ticker, target_dte, min_pitm, max_pitm, stock_price)
-
+                return self._screen_puts_standard(ticker, target_dte, max_pitm, stock_price)
+                
         except Exception as e:
             logger.error(f"Error in put screening: {str(e)}")
             return None
-
-    def _screen_puts_standard(self, ticker: str, target_dte: int, min_pitm: float, max_pitm: float, stock_price: float):
+    
+    def _screen_puts_standard(self, ticker: str, target_dte: int, max_pitm: float, stock_price: float):
         """Standard put screening method"""
         try:
             # Get option chain
@@ -129,9 +129,9 @@ class PutScreener(OptionsScreener):
             
             # Sort options by strike price (descending) to start with OTM puts
             options.sort(key=lambda x: float(x.strike), reverse=True)
-
-            logger.info(f"Screening {len(options)} put options for {min_pitm:.0%} < PITM < {max_pitm:.0%}")
-
+            
+            logger.info(f"Screening {len(options)} put options for PITM < {max_pitm:.0%}")
+            
             for option in options:
                 try:
                     strike = float(option.strike)
@@ -202,8 +202,8 @@ class PutScreener(OptionsScreener):
         except Exception as e:
             logger.error(f"Error in standard put screening: {str(e)}")
             return None
-
-    def _screen_puts_optimized(self, ticker: str, target_dte: int, min_pitm: float, max_pitm: float, stock_price: float):
+    
+    def _screen_puts_optimized(self, ticker: str, target_dte: int, max_pitm: float, stock_price: float):
         """Optimized put screening method - 5x faster"""
         try:
             # Get pre-filtered option chain

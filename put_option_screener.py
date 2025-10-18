@@ -146,9 +146,8 @@ def display_result(result, trading_session):
     print("="*75)
     return True
 
-def screen_put_options(ticker='AAPL', target_dte=45, min_assignment_risk=10.0, max_assignment_risk=20.0, use_optimized=True):
+def screen_put_options(ticker='AAPL', target_dte=45, max_assignment_risk=20.0, use_optimized=True):
     """Main screening function"""
-    min_pitm = min_assignment_risk / 100.0  # Convert percentage to decimal
     max_pitm = max_assignment_risk / 100.0  # Convert percentage to decimal
     
     optimization_mode = "⚡ OPTIMIZED" if use_optimized else "🐌 STANDARD"
@@ -193,10 +192,10 @@ def screen_put_options(ticker='AAPL', target_dte=45, min_assignment_risk=10.0, m
         
         # Find qualifying put option
         print("🔍 Searching for qualifying put option...")
-        print(f"   Criteria: ~{target_dte} DTE, {min_assignment_risk} < Assignment Probability < {max_assignment_risk}%")
-
-        result = screener.screen_puts(ticker.upper(), target_dte, min_pitm, max_pitm, use_optimized)
-
+        print(f"   Criteria: ~{target_dte} DTE, Assignment Probability < {max_assignment_risk}%")
+        
+        result = screener.screen_puts(ticker.upper(), target_dte, max_pitm, use_optimized)
+        
         return display_result(result, trading_session)
         
     except Exception as e:
@@ -234,20 +233,6 @@ def get_interactive_inputs():
         except ValueError:
             print("⚠️  Please enter a valid number")
     
-    # Get min assignment risk
-    while True:
-        try:
-            risk_input = input("Enter Minimum assignment risk % (1-50): ").strip()
-            if not risk_input:
-                min_risk = 10.0  # Default
-                break
-            min_risk = float(risk_input)
-            if 1.0 <= min_risk <= 50.0:
-                break
-            print("⚠️  Please enter a risk between 1% and 50%")
-        except ValueError:
-            print("⚠️  Please enter a valid number")
-        
     # Get max assignment risk
     while True:
         try:
@@ -261,17 +246,16 @@ def get_interactive_inputs():
             print("⚠️  Please enter a risk between 1% and 50%")
         except ValueError:
             print("⚠️  Please enter a valid number")
+    
+    return ticker, target_dte, max_risk
 
-    return ticker, target_dte, min_risk, max_risk
-
-def benchmark_comparison(ticker='AAPL', target_dte=45, min_assignment_risk=10.0, max_assignment_risk=20.0):
+def benchmark_comparison(ticker='AAPL', target_dte=45, max_assignment_risk=20.0):
     """Benchmark both methods and compare performance"""
     max_pitm = max_assignment_risk / 100.0
-    min_pitm = min_assignment_risk / 100.0
-
+    
     print(f"🏁 BENCHMARKING: {ticker} PUT OPTIONS SCREENING")
     print("=" * 60)
-    print(f"Target: ~{target_dte} DTE, Min Risk: {min_assignment_risk}%, Max Risk: {max_assignment_risk}%")
+    print(f"Target: ~{target_dte} DTE, Max Risk: {max_assignment_risk}%")
     print()
     
     screener = None
@@ -290,7 +274,7 @@ def benchmark_comparison(ticker='AAPL', target_dte=45, min_assignment_risk=10.0,
         start_time = time.time()
         
         try:
-            standard_result = screener.screen_puts(ticker, target_dte, min_pitm, max_pitm, use_optimized=False)
+            standard_result = screener.screen_puts(ticker, target_dte, max_pitm, use_optimized=False)
             standard_time = time.time() - start_time
             standard_success = standard_result is not None
         except Exception as e:
@@ -370,7 +354,7 @@ Examples:
   python put_option_screener.py                           # Interactive mode (fast)
   python put_option_screener.py AAPL                     # AAPL with defaults (fast)
   python put_option_screener.py AAPL --dte 60            # AAPL, 60 DTE (fast)
-  python put_option_screener.py MSFT --dte 30 --minrisk 10 --maxrisk 20   # MSFT, 30 DTE, 15% risk (fast)
+  python put_option_screener.py MSFT --dte 30 --risk 15  # MSFT, 30 DTE, 15% risk (fast)
   python put_option_screener.py AAPL --slow              # Use standard slower method
   python put_option_screener.py AAPL --benchmark         # Compare both methods
         """
@@ -378,8 +362,7 @@ Examples:
     
     parser.add_argument('ticker', nargs='?', help='Stock ticker symbol (e.g., AAPL, MSFT)')
     parser.add_argument('--dte', type=int, default=45, help='Target days to expiration (default: 45)')
-    parser.add_argument('--minrisk', type=float, default=10.0, help='Minimun assignment risk percentage (default: 10.0)')
-    parser.add_argument('--maxrisk', type=float, default=20.0, help='Maximum assignment risk percentage (default: 20.0)')
+    parser.add_argument('--risk', type=float, default=20.0, help='Maximum assignment risk percentage (default: 20.0)')
     parser.add_argument('--interactive', '-i', action='store_true', help='Force interactive mode')
     parser.add_argument('--fast', action='store_true', help='Use optimized fast mode (default)')
     parser.add_argument('--slow', action='store_true', help='Use standard slower method for comparison')
@@ -399,20 +382,19 @@ def main():
     
     # Handle interactive mode
     if args.interactive or not args.ticker:
-        ticker, target_dte, min_risk, max_risk = get_interactive_inputs()
+        ticker, target_dte, max_risk = get_interactive_inputs()
         use_optimized = not args.slow  # Default to optimized unless --slow specified
     else:
         # Command line mode
         ticker = args.ticker
         target_dte = args.dte
-        min_risk = args.minrisk
-        max_risk = args.maxrisk
+        max_risk = args.risk
         use_optimized = not args.slow  # Use optimized by default unless --slow
-
-        print(f"📊 Command line mode: {ticker}, {target_dte} DTE, {min_risk}% min risk, {max_risk}% max risk")
-
+        
+        print(f"📊 Command line mode: {ticker}, {target_dte} DTE, {max_risk}% max risk")
+    
     # Run the screening
-    screen_put_options(ticker, target_dte, min_risk, max_risk, use_optimized)
+    screen_put_options(ticker, target_dte, max_risk, use_optimized)
 
 if __name__ == "__main__":
     main() 
