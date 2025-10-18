@@ -26,7 +26,7 @@ __license__ = 'MIT'
 # Import main classes for convenience
 try:
     from .options_base import OptionsScreener
-    from .put_screener import PutScreener
+    from .put_screener_helper import PutScreener
     
     __all__ = ['OptionsScreener', 'PutScreener']
     

@@ -7,7 +7,7 @@ Uses modular screener library for cash-secured put strategies
 import sys
 import argparse
 import time
-from put_screener import PutScreener
+from put_screener_helper import PutScreener
 
 def display_result(result, trading_session):
     """Display the screening results in a formatted way"""
@@ -19,8 +19,7 @@ def display_result(result, trading_session):
     print("\n" + "="*75)
     print("🎯 QUALIFYING PUT OPTION FOUND")
     print("="*75)
-    
-    print(f"📊 Current Stock Price:    ${result['stock_price']:.2f}")
+    print(f"💰 Contract ID:            {result['contractId']}")
     print(f"💰 Strike Price:           ${result['strike']:.2f}")
     print(f"📅 Expiration Date:        {result['expiration'].strftime('%Y-%m-%d')} ({result['expiration_str']})")
     print(f"📈 Expiration Type:        {'Weekly' if result['is_weekly'] else 'Monthly'}")

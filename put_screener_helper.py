@@ -169,7 +169,7 @@ class PutScreener(OptionsScreener):
                     # Calculate PITM (absolute delta for puts)
                     pitm = abs(delta)
                     
-                    logger.info(f"${strike} Put - PITM: {pitm:.2%}, Premium: ${premium:.2f} ({data_source})")
+                    logger.info(f"Considering ${strike} Put - PITM: {pitm:.2%}, Premium: ${premium:.2f} ({data_source})")
                     
                     if pitm < max_pitm:
                         # Found qualifying option
@@ -246,6 +246,7 @@ class PutScreener(OptionsScreener):
             # Process candidates and find first qualifying
             for option in candidate_options:
                 try:
+                    contractId = option.conId
                     strike = float(option.strike)
                     market_data = market_data_results.get(option, {})
                     
@@ -281,6 +282,7 @@ class PutScreener(OptionsScreener):
                         logger.info(f"✅ Found qualifying option early: ${strike} Put")
                         
                         return {
+                            'contractId': contractId,
                             'stock_price': stock_price,
                             'strike': strike,
                             'expiration': exp_date,
